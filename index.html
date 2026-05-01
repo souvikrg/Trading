@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Trading Rules Dashboard</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:Segoe UI; }
+
+body { background: linear-gradient(135deg,#1e272e,#2f3640); }
+
+header {
+  color:white; padding:15px; text-align:center;
+  font-size:22px; background: rgba(0,0,0,0.6);
+}
+
+.container { padding:20px; max-width:1200px; margin:auto; }
+
+.upload-box {
+  background: rgba(255,255,255,0.08);
+  padding:20px; border-radius:12px; margin-bottom:20px;
+}
+
+button {
+  padding:6px 12px; border:none; border-radius:6px;
+  cursor:pointer; margin-top:5px;
+}
+
+.primary { background:#0984e3; color:white; }
+.delete-btn { background:#d63031; color:white; }
+.edit-btn { background:#fdcb6e; }
+.copy-btn { background:#6c5ce7; color:white; }
+
+.record {
+  display:flex;
+  background: rgba(255,255,255,0.08);
+  border-radius:12px;
+  margin-bottom:20px;
+}
+
+.left, .right { width:50%; padding:15px; }
+
+.left img {
+  max-width:100%; border-radius:10px; cursor:pointer;
+}
+
+textarea { width:100%; height:60px; margin-top:5px; }
+
+.rule {
+  display:flex;
+  justify-content:space-between;
+  background: rgba(255,255,255,0.15);
+  padding:6px;
+  margin-top:6px;
+  border-radius:6px;
+  color:white;
+}
+
+.rule-text { flex:1; }
+
+/* MODAL */
+.modal {
+  display:none; position:fixed; top:0; left:0;
+  width:100%; height:100%;
+  background: rgba(0,0,0,0.9);
+  justify-content:center; align-items:center;
+}
+
+.modal img { max-width:90%; max-height:90%; }
+
+</style>
+</head>
+
+<body>
+
+<header>📊 Trading Rules Dashboard</header>
+
+<div class="container">
+
+  <div class="upload-box">
+    <input type="file" id="imageUpload">
+    <button class="primary" onclick="createRecord()">Create Record</button>
+    <button class="primary" onclick="downloadPDF()">Download PDF</button>
+  </div>
+
+  <div id="recordsContainer"></div>
+
+</div>
+
+<div class="modal" id="imgModal" onclick="closeModal()">
+  <img id="modalImg">
+</div>
+
+<script>
+
+let records = JSON.parse(localStorage.getItem("records")) || [];
+let imageData = null;
+
+document.getElementById("imageUpload").addEventListener("change", e=>{
+  const file = e.target.files[0];
+  if(file){
+    const reader = new FileReader();
+    reader.onload = ev=> imageData = ev.target.result;
+    reader.readAsDataURL(file);
+  }
+});
+
+function saveData(){
+  localStorage.setItem("records", JSON.stringify(records));
+}
+
+function render(){
+  const container = document.getElementById("recordsContainer");
+  container.innerHTML = "";
+
+  records.forEach((rec,i)=>{
+    const div = document.createElement("div");
+    div.className="record";
+
+    div.innerHTML = `
+      <div class="left">
+        <img src="${rec.image}" onclick="openModal('${rec.image}')">
+        <button class="delete-btn" onclick="deleteRecord(${i})">Delete</button>
+      </div>
+
+      <div class="right">
+        <textarea placeholder="Enter rule..."></textarea>
+        <button class="primary" onclick="addRule(${i},this)">Add Rule</button>
+
+        ${rec.rules.map((r,ri)=>`
+          <div class="rule">
+            <span class="rule-text">${r}</span>
+            <div>
+              <button class="copy-btn" onclick="copyRule('${r}')">Copy</button>
+              <button class="edit-btn" onclick="editRule(${i},${ri})">Edit</button>
+              <button class="delete-btn" onclick="deleteRule(${i},${ri})">X</button>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+function createRecord(){
+  if(!imageData) return alert("Upload image first");
+
+  records.unshift({image:imageData,rules:[]});
+  imageData=null;
+  document.getElementById("imageUpload").value="";
+
+  saveData(); render();
+}
+
+function addRule(i,btn){
+  const text = btn.previousElementSibling.value.trim();
+  if(!text) return;
+
+  records[i].rules.push(text);
+  btn.previousElementSibling.value="";
+  saveData(); render();
+}
+
+function deleteRule(i,ri){
+  records[i].rules.splice(ri,1);
+  saveData(); render();
+}
+
+function editRule(i,ri){
+  const newText = prompt("Edit rule:",records[i].rules[ri]);
+  if(newText){
+    records[i].rules[ri]=newText;
+    saveData(); render();
+  }
+}
+
+function deleteRecord(i){
+  if(confirm("Delete record?")){
+    records.splice(i,1);
+    saveData(); render();
+  }
+}
+
+function copyRule(text){
+  navigator.clipboard.writeText(text);
+  alert("Copied!");
+}
+
+function openModal(src){
+  document.getElementById("imgModal").style.display="flex";
+  document.getElementById("modalImg").src=src;
+}
+function closeModal(){
+  document.getElementById("imgModal").style.display="none";
+}
+
+/* PROFESSIONAL PDF */
+async function downloadPDF(){
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF("p","mm","a4");
+
+  for(let i=0;i<records.length;i++){
+
+    const rec = records[i];
+
+    /* PAGE 1: IMAGE */
+    const img = rec.image;
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    const imgProps = pdf.getImageProperties(img);
+    const ratio = Math.min(pageWidth / imgProps.width, pageHeight / imgProps.height);
+
+    const imgWidth = imgProps.width * ratio;
+    const imgHeight = imgProps.height * ratio;
+
+    const x = (pageWidth - imgWidth) / 2;
+    const y = (pageHeight - imgHeight) / 2;
+
+    if(i>0) pdf.addPage();
+    pdf.addImage(img,"JPEG",x,y,imgWidth,imgHeight);
+
+    /* PAGE 2: RULES */
+    pdf.addPage();
+
+    pdf.setFont("helvetica","bold");
+    pdf.setFontSize(16);
+    pdf.text(`Trade Rules - Record ${i+1}`, 10, 20);
+
+    pdf.setFontSize(12);
+    let yPos = 30;
+
+    rec.rules.forEach((rule, idx)=>{
+      const splitText = pdf.splitTextToSize(`${idx+1}. ${rule}`, 180);
+      pdf.text(splitText, 10, yPos);
+      yPos += splitText.length * 6;
+
+      if(yPos > 280){
+        pdf.addPage();
+        yPos = 20;
+      }
+    });
+
+  }
+
+  pdf.save("Trading-Rules.pdf");
+}
+
+render();
+
+</script>
+</body>
+</html>

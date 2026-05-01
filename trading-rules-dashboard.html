@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading Rules Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0d10;
+  --surface: #16161a;
+  --surface2: #1e1e24;
+  --surface3: #26262e;
+  --border: #2e2e38;
+  --border2: #3d3d4a;
+  --text: #f0eef8;
+  --text2: #9896a8;
+  --text3: #5c5a6a;
+  --accent: #7c5cfc;
+  --accent2: #9b7ffe;
+  --accent-bg: rgba(124,92,252,0.12);
+  --accent-border: rgba(124,92,252,0.3);
+  --green: #22c55e;
+  --green-bg: rgba(34,197,94,0.1);
+  --red: #ef4444;
+  --red-bg: rgba(239,68,68,0.1);
+  --amber: #f59e0b;
+  --amber-bg: rgba(245,158,11,0.1);
+  --cyan: #06b6d4;
+  --cyan-bg: rgba(6,182,212,0.1);
+  --blue: #3b82f6;
+  --blue-bg: rgba(59,130,246,0.1);
+  --pink: #ec4899;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+mono { font-family:'JetBrains Mono',monospace; }
+
+/* HEADER */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 60px; position: sticky; top: 0; z-index: 100;
+}
+.header-left { display:flex; align-items:center; gap:12px; }
+.header-logo {
+  width:36px; height:36px; border-radius:10px;
+  background: linear-gradient(135deg,var(--accent),var(--pink));
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px;
+}
+.header-title { font-size:16px; font-weight:700; letter-spacing:-0.3px; }
+.header-title span { color:var(--accent2); }
+.header-right { display:flex; align-items:center; gap:10px; }
+.badge { font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; font-family:'JetBrains Mono',monospace; }
+.badge-green { background:var(--green-bg); color:var(--green); border:1px solid rgba(34,197,94,0.2); }
+.badge-purple { background:var(--accent-bg); color:var(--accent2); border:1px solid var(--accent-border); }
+
+/* TOOLBAR */
+.toolbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 28px;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.upload-area {
+  display:flex; align-items:center; gap:10px;
+  background: var(--surface2); border: 1px dashed var(--border2);
+  border-radius: var(--radius); padding: 8px 14px; cursor:pointer;
+  transition: all 0.15s; flex:1; min-width:200px;
+}
+.upload-area:hover { border-color:var(--accent); background:var(--accent-bg); }
+.upload-area input { display:none; }
+.upload-label { font-size:12px; font-weight:500; color:var(--text2); cursor:pointer; }
+.upload-preview { width:28px; height:28px; border-radius:6px; object-fit:cover; display:none; }
+
+.search-wrap { display:flex; align-items:center; gap:8px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:6px 12px; flex:1; min-width:160px; }
+.search-wrap input { border:none; outline:none; background:transparent; color:var(--text); font-size:13px; width:100%; font-family:'Inter',sans-serif; }
+.search-wrap input::placeholder { color:var(--text3); }
+
+.sort-select { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:7px 10px; color:var(--text); font-size:12px; font-family:'Inter',sans-serif; outline:none; cursor:pointer; }
+
+/* BTN STYLES */
+.btn { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border:none; border-radius:var(--radius); cursor:pointer; font-size:12px; font-weight:600; font-family:'Inter',sans-serif; transition:all 0.15s; white-space:nowrap; }
+.btn:hover { filter:brightness(1.1); }
+.btn:active { transform:scale(0.97); }
+.btn-primary { background:var(--accent); color:#fff; }
+.btn-danger { background:var(--red-bg); color:var(--red); border:1px solid rgba(239,68,68,0.2); }
+.btn-amber { background:var(--amber-bg); color:var(--amber); border:1px solid rgba(245,158,11,0.2); }
+.btn-cyan { background:var(--cyan-bg); color:var(--cyan); border:1px solid rgba(6,182,212,0.2); }
+.btn-green { background:var(--green-bg); color:var(--green); border:1px solid rgba(34,197,94,0.2); }
+.btn-ghost { background:var(--surface3); color:var(--text2); border:1px solid var(--border); }
+.btn-sm { padding:5px 10px; font-size:11px; }
+
+/* STATS BAR */
+.stats-bar {
+  display: flex; gap: 12px; padding: 14px 28px;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.stat-chip { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:8px 14px; display:flex; align-items:center; gap:8px; }
+.stat-chip .num { font-size:18px; font-weight:700; font-family:'JetBrains Mono',monospace; color:var(--text); }
+.stat-chip .lbl { font-size:11px; color:var(--text3); font-weight:500; }
+
+/* CONTAINER */
+.container { padding: 24px 28px; max-width:1400px; margin:auto; }
+
+/* EMPTY STATE */
+.empty { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:50vh; gap:12px; }
+.empty-icon { font-size:52px; opacity:0.2; }
+.empty-title { font-size:16px; font-weight:600; color:var(--text2); }
+.empty-sub { font-size:12px; color:var(--text3); }
+
+/* RECORD CARD */
+.record {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  margin-bottom: 20px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.record:hover { border-color: var(--border2); }
+.record.pinned { border-color: rgba(245,158,11,0.4); }
+
+.record-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: var(--surface2); border-bottom: 1px solid var(--border);
+}
+.record-meta { display:flex; align-items:center; gap:8px; }
+.record-num { font-size:11px; font-weight:700; color:var(--accent2); font-family:'JetBrains Mono',monospace; background:var(--accent-bg); border:1px solid var(--accent-border); border-radius:5px; padding:2px 8px; }
+.record-date { font-size:11px; color:var(--text3); font-family:'JetBrains Mono',monospace; }
+.record-actions { display:flex; gap:6px; }
+.pin-btn { font-size:14px; cursor:pointer; opacity:0.4; transition:opacity 0.15s; }
+.pin-btn.active { opacity:1; }
+
+.record-body { display:flex; }
+
+/* LEFT */
+.record-left { width:42%; border-right:1px solid var(--border); }
+.img-wrap { position:relative; overflow:hidden; background:var(--bg); }
+.img-wrap img { width:100%; display:block; cursor:zoom-in; transition:transform 0.3s; max-height:320px; object-fit:contain; }
+.img-wrap:hover img { transform:scale(1.03); }
+.img-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.5); opacity:0; transition:opacity 0.2s; pointer-events:none; }
+.img-wrap:hover .img-overlay { opacity:1; }
+.img-overlay-text { color:#fff; font-size:13px; font-weight:600; }
+
+.tag-area { padding: 12px 14px; border-top:1px solid var(--border); }
+.tag-title { font-size:10px; font-weight:700; color:var(--text3); letter-spacing:1px; text-transform:uppercase; margin-bottom:7px; }
+.tags { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:7px; }
+.tag { font-size:11px; font-weight:500; padding:3px 8px; border-radius:20px; display:flex; align-items:center; gap:4px; cursor:pointer; }
+.tag-blue { background:var(--blue-bg); color:var(--blue); border:1px solid rgba(59,130,246,0.2); }
+.tag-green { background:var(--green-bg); color:var(--green); border:1px solid rgba(34,197,94,0.2); }
+.tag-red { background:var(--red-bg); color:var(--red); border:1px solid rgba(239,68,68,0.2); }
+.tag-amber { background:var(--amber-bg); color:var(--amber); border:1px solid rgba(245,158,11,0.2); }
+.tag-cyan { background:var(--cyan-bg); color:var(--cyan); border:1px solid rgba(6,182,212,0.2); }
+.tag-remove { font-size:12px; line-height:1; }
+.tag-input-wrap { display:flex; gap:5px; }
+.tag-input-wrap input { flex:1; background:var(--surface3); border:1px solid var(--border); border-radius:6px; padding:4px 8px; color:var(--text); font-size:11px; outline:none; font-family:'Inter',sans-serif; }
+.tag-input-wrap input::placeholder { color:var(--text3); }
+
+/* NOTES */
+.notes-area { padding:12px 14px; border-top:1px solid var(--border); }
+.notes-area textarea { width:100%; background:var(--surface3); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); font-size:12px; padding:8px 10px; resize:none; outline:none; font-family:'Inter',sans-serif; line-height:1.5; height:52px; }
+.notes-area textarea::placeholder { color:var(--text3); }
+.notes-area textarea:focus { border-color:var(--accent); }
+
+/* RIGHT */
+.record-right { flex:1; display:flex; flex-direction:column; }
+.rules-header { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+.rules-count { font-size:12px; font-weight:600; color:var(--text2); }
+.rules-count span { color:var(--accent2); font-family:'JetBrains Mono',monospace; }
+
+.add-rule-wrap { padding: 12px 14px; border-bottom:1px solid var(--border); display:flex; gap:8px; }
+.add-rule-wrap textarea { flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); font-size:13px; padding:8px 10px; resize:none; height:52px; outline:none; font-family:'Inter',sans-serif; line-height:1.5; }
+.add-rule-wrap textarea:focus { border-color:var(--accent); }
+.add-rule-wrap textarea::placeholder { color:var(--text3); }
+
+.rules-list { flex:1; padding:10px 14px; overflow-y:auto; max-height:340px; }
+.rule-item {
+  display:flex; align-items:flex-start; gap:8px;
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:var(--radius); padding:10px 12px; margin-bottom:8px;
+  transition: border-color 0.15s;
+}
+.rule-item:hover { border-color:var(--border2); }
+.rule-num { font-size:11px; font-weight:700; font-family:'JetBrains Mono',monospace; color:var(--text3); background:var(--surface3); border-radius:4px; padding:1px 6px; flex-shrink:0; margin-top:1px; }
+.rule-text { flex:1; font-size:13px; color:var(--text); line-height:1.5; word-break:break-word; }
+.rule-btns { display:flex; gap:4px; flex-shrink:0; }
+
+/* MODAL */
+.modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:999; justify-content:center; align-items:center; flex-direction:column; gap:12px; }
+.modal.show { display:flex; }
+.modal img { max-width:92%; max-height:85vh; border-radius:10px; box-shadow:0 24px 60px rgba(0,0,0,0.8); }
+.modal-close { color:#fff; font-size:13px; font-weight:500; cursor:pointer; opacity:0.6; }
+.modal-close:hover { opacity:1; }
+
+/* CONFIRM DIALOG */
+.dialog-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; justify-content:center; align-items:center; }
+.dialog-overlay.show { display:flex; }
+.dialog { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-xl); padding:24px; width:340px; }
+.dialog-title { font-size:15px; font-weight:700; margin-bottom:6px; }
+.dialog-msg { font-size:13px; color:var(--text2); margin-bottom:18px; line-height:1.5; }
+.dialog-btns { display:flex; gap:8px; justify-content:flex-end; }
+
+/* TOAST */
+.toast-wrap { position:fixed; bottom:24px; right:24px; z-index:300; display:flex; flex-direction:column; gap:8px; }
+.toast {
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:10px 16px; font-size:13px; font-weight:500;
+  display:flex; align-items:center; gap:8px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.4);
+  animation: slideIn 0.25s ease;
+}
+.toast.removing { animation: slideOut 0.25s ease forwards; }
+@keyframes slideIn { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
+@keyframes slideOut { to { opacity:0; transform:translateX(40px); } }
+.toast-icon { font-size:15px; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="header-logo">📊</div>
+    <div class="header-title">Trading<span>Rules</span> Dashboard</div>
+  </div>
+  <div class="header-right">
+    <span class="badge badge-purple" id="hdr-count">0 records</span>
+    <span class="badge badge-green" id="hdr-rules">0 rules</span>
+    <button class="btn btn-primary" onclick="downloadPDF()">⬇ Export PDF</button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="upload-area" onclick="document.getElementById('imageUpload').click()">
+    <span style="font-size:18px">📁</span>
+    <span class="upload-label" id="upload-label">Click to upload chart image</span>
+    <img class="upload-preview" id="upload-preview">
+    <input type="file" id="imageUpload" accept="image/*">
+  </div>
+  <button class="btn btn-primary" onclick="createRecord()">＋ Create Record</button>
+  <div class="search-wrap">
+    <span style="color:var(--text3);font-size:14px">🔍</span>
+    <input type="text" id="search-input" placeholder="Search rules or tags..." oninput="render()">
+  </div>
+  <select class="sort-select" id="sort-select" onchange="render()">
+    <option value="newest">Newest first</option>
+    <option value="oldest">Oldest first</option>
+    <option value="most-rules">Most rules</option>
+    <option value="pinned">Pinned first</option>
+  </select>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-chip"><span class="num" id="s-records">0</span><span class="lbl">Records</span></div>
+  <div class="stat-chip"><span class="num" id="s-rules">0</span><span class="lbl">Total Rules</span></div>
+  <div class="stat-chip"><span class="num" id="s-pinned">0</span><span class="lbl" style="color:var(--amber)">Pinned</span></div>
+  <div class="stat-chip"><span class="num" id="s-avg">0</span><span class="lbl">Avg Rules/Record</span></div>
+</div>
+
+<div class="container">
+  <div id="recordsContainer"></div>
+</div>
+
+<div class="modal" id="imgModal" onclick="closeModal()">
+  <img id="modalImg">
+  <div class="modal-close">Click anywhere to close</div>
+</div>
+
+<div class="dialog-overlay" id="dialogOverlay">
+  <div class="dialog">
+    <div class="dialog-title" id="dialog-title">Confirm</div>
+    <div class="dialog-msg" id="dialog-msg">Are you sure?</div>
+    <div class="dialog-btns">
+      <button class="btn btn-ghost" onclick="closeDialog()">Cancel</button>
+      <button class="btn btn-danger" id="dialog-confirm-btn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+let records = JSON.parse(localStorage.getItem("records_v2")) || [];
+let imageData = null;
+let dialogCallback = null;
+
+const TAG_COLORS = ['tag-blue','tag-green','tag-red','tag-amber','tag-cyan'];
+
+document.getElementById("imageUpload").addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      imageData = ev.target.result;
+      document.getElementById('upload-label').textContent = file.name;
+      const prev = document.getElementById('upload-preview');
+      prev.src = imageData; prev.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+function saveData() { localStorage.setItem("records_v2", JSON.stringify(records)); }
+
+function getSortedFiltered() {
+  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  const sort = document.getElementById('sort-select').value;
+  let list = records.map((r, i) => ({ ...r, _idx: i }));
+
+  if (q) list = list.filter(r =>
+    r.rules.some(rule => rule.toLowerCase().includes(q)) ||
+    (r.tags || []).some(t => t.toLowerCase().includes(q)) ||
+    (r.notes || '').toLowerCase().includes(q)
+  );
+
+  if (sort === 'oldest') list.reverse();
+  else if (sort === 'most-rules') list.sort((a,b) => b.rules.length - a.rules.length);
+  else if (sort === 'pinned') list.sort((a,b) => (b.pinned?1:0) - (a.pinned?1:0));
+
+  return list;
+}
+
+function updateStats() {
+  const total = records.length;
+  const totalRules = records.reduce((s,r) => s + r.rules.length, 0);
+  const pinned = records.filter(r => r.pinned).length;
+  const avg = total ? (totalRules / total).toFixed(1) : 0;
+  document.getElementById('s-records').textContent = total;
+  document.getElementById('s-rules').textContent = totalRules;
+  document.getElementById('s-pinned').textContent = pinned;
+  document.getElementById('s-avg').textContent = avg;
+  document.getElementById('hdr-count').textContent = total + ' record' + (total !== 1 ? 's' : '');
+  document.getElementById('hdr-rules').textContent = totalRules + ' rules';
+}
+
+function render() {
+  const container = document.getElementById("recordsContainer");
+  const list = getSortedFiltered();
+  updateStats();
+
+  if (records.length === 0) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">📈</div><div class="empty-title">No records yet</div><div class="empty-sub">Upload a chart image and click Create Record to get started</div></div>`;
+    return;
+  }
+
+  if (list.length === 0) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">No matches</div><div class="empty-sub">Try a different search term</div></div>`;
+    return;
+  }
+
+  container.innerHTML = '';
+  list.forEach(rec => {
+    const i = rec._idx;
+    const date = rec.date || 'Unknown date';
+    const tags = rec.tags || [];
+    const notes = rec.notes || '';
+    const tagColors = ['tag-blue','tag-green','tag-red','tag-amber','tag-cyan'];
+
+    const div = document.createElement('div');
+    div.className = 'record' + (rec.pinned ? ' pinned' : '');
+
+    div.innerHTML = `
+      <div class="record-header">
+        <div class="record-meta">
+          <span class="record-num">#${String(i + 1).padStart(2,'0')}</span>
+          <span class="record-date">${date}</span>
+          ${rec.pinned ? '<span style="font-size:12px;color:var(--amber)">📌 Pinned</span>' : ''}
+        </div>
+        <div class="record-actions">
+          <span class="pin-btn ${rec.pinned ? 'active' : ''}" title="Pin record" onclick="togglePin(${i})">📌</span>
+          <button class="btn btn-danger btn-sm" onclick="confirmDelete(${i})">🗑 Delete</button>
+        </div>
+      </div>
+      <div class="record-body">
+        <div class="record-left">
+          <div class="img-wrap" onclick="openModal('${rec.image}')">
+            <img src="${rec.image}" alt="Chart">
+            <div class="img-overlay"><span class="img-overlay-text">🔍 View full</span></div>
+          </div>
+          <div class="tag-area">
+            <div class="tag-title">Tags</div>
+            <div class="tags" id="tags-${i}">
+              ${tags.map((t,ti) => `<span class="tag ${tagColors[ti % tagColors.length]}" onclick="removeTag(${i},${ti})">${t} <span class="tag-remove">×</span></span>`).join('')}
+            </div>
+            <div class="tag-input-wrap">
+              <input type="text" id="tag-input-${i}" placeholder="Add tag..." onkeydown="if(event.key==='Enter')addTag(${i})">
+              <button class="btn btn-cyan btn-sm" onclick="addTag(${i})">+ Tag</button>
+            </div>
+          </div>
+          <div class="notes-area">
+            <textarea id="notes-${i}" placeholder="Trade notes, context, observations..." onblur="saveNotes(${i},this.value)">${notes}</textarea>
+          </div>
+        </div>
+        <div class="record-right">
+          <div class="rules-header">
+            <span class="rules-count">Rules — <span>${rec.rules.length}</span></span>
+            <button class="btn btn-ghost btn-sm" onclick="copyAll(${i})">⧉ Copy all</button>
+          </div>
+          <div class="add-rule-wrap">
+            <textarea id="rule-input-${i}" placeholder="Enter a trading rule for this chart..."></textarea>
+            <button class="btn btn-primary" style="align-self:flex-end" onclick="addRule(${i})">+ Add</button>
+          </div>
+          <div class="rules-list">
+            ${rec.rules.length === 0 ? `<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">No rules yet — add your first one above</div>` : ''}
+            ${rec.rules.map((r,ri) => `
+              <div class="rule-item" id="rule-${i}-${ri}">
+                <span class="rule-num">${ri+1}</span>
+                <span class="rule-text">${escHtml(r)}</span>
+                <div class="rule-btns">
+                  <button class="btn btn-cyan btn-sm" onclick="copyRule('${escAttr(r)}')">⧉</button>
+                  <button class="btn btn-amber btn-sm" onclick="editRule(${i},${ri})">✎</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteRule(${i},${ri})">×</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s) { return s.replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+function createRecord() {
+  if (!imageData) { toast('📁 Upload a chart image first', 'warn'); return; }
+  const now = new Date();
+  const date = now.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  records.unshift({ image: imageData, rules: [], tags: [], notes: '', date, pinned: false });
+  imageData = null;
+  document.getElementById('imageUpload').value = '';
+  document.getElementById('upload-label').textContent = 'Click to upload chart image';
+  document.getElementById('upload-preview').style.display = 'none';
+  saveData(); render();
+  toast('✅ Record created', 'success');
+}
+
+function addRule(i) {
+  const inp = document.getElementById(`rule-input-${i}`);
+  const text = inp.value.trim();
+  if (!text) { toast('⚠ Rule cannot be empty', 'warn'); return; }
+  records[i].rules.push(text);
+  inp.value = '';
+  saveData(); render();
+  toast('📝 Rule added', 'success');
+}
+
+function deleteRule(i, ri) {
+  records[i].rules.splice(ri, 1);
+  saveData(); render();
+  toast('🗑 Rule deleted', 'info');
+}
+
+function editRule(i, ri) {
+  const newText = prompt('Edit rule:', records[i].rules[ri]);
+  if (newText && newText.trim()) { records[i].rules[ri] = newText.trim(); saveData(); render(); toast('✏ Rule updated', 'success'); }
+}
+
+function copyRule(text) {
+  navigator.clipboard.writeText(text).then(() => toast('⧉ Copied!', 'success'));
+}
+
+function copyAll(i) {
+  const text = records[i].rules.map((r,idx) => `${idx+1}. ${r}`).join('\n');
+  navigator.clipboard.writeText(text).then(() => toast(`⧉ Copied ${records[i].rules.length} rules`, 'success'));
+}
+
+function addTag(i) {
+  const inp = document.getElementById(`tag-input-${i}`);
+  const t = inp.value.trim();
+  if (!t) return;
+  if (!records[i].tags) records[i].tags = [];
+  if (records[i].tags.length >= 6) { toast('Max 6 tags per record', 'warn'); return; }
+  records[i].tags.push(t);
+  inp.value = '';
+  saveData(); render();
+}
+
+function removeTag(i, ti) {
+  records[i].tags.splice(ti, 1);
+  saveData(); render();
+}
+
+function saveNotes(i, val) {
+  records[i].notes = val;
+  saveData();
+}
+
+function togglePin(i) {
+  records[i].pinned = !records[i].pinned;
+  saveData(); render();
+  toast(records[i].pinned ? '📌 Pinned' : 'Unpinned', 'info');
+}
+
+function confirmDelete(i) {
+  document.getElementById('dialog-title').textContent = 'Delete Record';
+  document.getElementById('dialog-msg').textContent = `Delete record #${i+1} with ${records[i].rules.length} rule(s)? This cannot be undone.`;
+  document.getElementById('dialog-confirm-btn').onclick = () => { deleteRecord(i); closeDialog(); };
+  document.getElementById('dialogOverlay').classList.add('show');
+}
+function closeDialog() { document.getElementById('dialogOverlay').classList.remove('show'); }
+
+function deleteRecord(i) {
+  records.splice(i, 1);
+  saveData(); render();
+  toast('🗑 Record deleted', 'info');
+}
+
+function openModal(src) {
+  document.getElementById('imgModal').classList.add('show');
+  document.getElementById('modalImg').src = src;
+}
+function closeModal() { document.getElementById('imgModal').classList.remove('show'); }
+
+function toast(msg, type='info') {
+  const wrap = document.getElementById('toast-wrap');
+  const t = document.createElement('div');
+  const colors = { success:'var(--green)', warn:'var(--amber)', info:'var(--cyan)' };
+  t.className = 'toast';
+  t.innerHTML = `<span class="toast-icon">${msg.split(' ')[0]}</span><span style="color:var(--text)">${msg.substring(msg.indexOf(' ')+1)}</span>`;
+  t.style.borderColor = colors[type] || 'var(--border)';
+  wrap.appendChild(t);
+  setTimeout(() => { t.classList.add('removing'); setTimeout(() => t.remove(), 250); }, 2500);
+}
+
+/* PDF EXPORT */
+async function downloadPDF() {
+  if (!records.length) { toast('No records to export', 'warn'); return; }
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF("p","mm","a4");
+  const pw = pdf.internal.pageSize.getWidth();
+  const ph = pdf.internal.pageSize.getHeight();
+
+  for (let i = 0; i < records.length; i++) {
+    const rec = records[i];
+    if (i > 0) pdf.addPage();
+
+    /* Cover page for record */
+    pdf.setFillColor(13,13,16);
+    pdf.rect(0,0,pw,ph,'F');
+    pdf.setFontSize(10); pdf.setFont("helvetica","normal");
+    pdf.setTextColor(100,100,120);
+    pdf.text(`Record #${String(i+1).padStart(2,'0')} · ${rec.date || ''} · ${rec.rules.length} rules`, 14, 14);
+
+    const imgProps = pdf.getImageProperties(rec.image);
+    const maxW = pw - 28; const maxH = ph - 60;
+    const ratio = Math.min(maxW / imgProps.width, maxH / imgProps.height);
+    const iw = imgProps.width * ratio; const ih = imgProps.height * ratio;
+    pdf.addImage(rec.image,"JPEG",(pw-iw)/2,24,iw,ih);
+
+    /* Tags */
+    if (rec.tags && rec.tags.length) {
+      pdf.setFontSize(9); pdf.setTextColor(120,120,160);
+      pdf.text('Tags: ' + rec.tags.join('  ·  '), 14, 24 + ih + 8);
+    }
+
+    /* Notes */
+    if (rec.notes) {
+      pdf.setFontSize(9); pdf.setTextColor(140,140,160);
+      const noteLines = pdf.splitTextToSize('Notes: ' + rec.notes, pw - 28);
+      pdf.text(noteLines, 14, 24 + ih + 16);
+    }
+
+    /* Rules page */
+    if (rec.rules.length) {
+      pdf.addPage();
+      pdf.setFillColor(13,13,16); pdf.rect(0,0,pw,ph,'F');
+      pdf.setFont("helvetica","bold"); pdf.setFontSize(15); pdf.setTextColor(160,140,255);
+      pdf.text(`Trade Rules — Record #${String(i+1).padStart(2,'0')}`, 14, 18);
+      pdf.setFont("helvetica","normal"); pdf.setFontSize(9); pdf.setTextColor(100,100,120);
+      pdf.text(rec.date || '', 14, 25);
+
+      pdf.setDrawColor(50,50,60); pdf.line(14,28,pw-14,28);
+
+      let y = 36;
+      rec.rules.forEach((rule, ri) => {
+        pdf.setFillColor(22,22,28); pdf.roundedRect(14, y-4, pw-28, 10, 2, 2, 'F');
+        pdf.setFont("helvetica","bold"); pdf.setFontSize(9); pdf.setTextColor(100,100,200);
+        pdf.text(`${ri+1}.`, 17, y+2);
+        pdf.setFont("helvetica","normal"); pdf.setTextColor(220,215,240);
+        const lines = pdf.splitTextToSize(rule, pw - 40);
+        pdf.text(lines, 24, y+2);
+        y += lines.length * 6 + 5;
+        if (y > ph - 20) { pdf.addPage(); pdf.setFillColor(13,13,16); pdf.rect(0,0,pw,ph,'F'); y = 20; }
+      });
+    }
+  }
+
+  pdf.save("Trading-Rules-Dashboard.pdf");
+  toast('📄 PDF exported', 'success');
+}
+
+render();
+</script>
+</body>
+</html>

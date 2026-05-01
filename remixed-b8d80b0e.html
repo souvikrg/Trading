@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Position Sizer Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f7f4;
+  --surface: #ffffff;
+  --surface2: #f2f0eb;
+  --border: #e2dfd8;
+  --border2: #ccc9c0;
+  --text: #1a1916;
+  --text2: #6b6860;
+  --text3: #9b9890;
+  --accent: #4338ca;
+  --accent-bg: #eef2ff;
+  --accent-border: #c7d2fe;
+  --green: #16a34a;
+  --green-bg: #f0fdf4;
+  --green-border: #bbf7d0;
+  --red: #dc2626;
+  --red-bg: #fef2f2;
+  --red-border: #fecaca;
+  --amber: #b45309;
+  --amber-bg: #fffbeb;
+  --amber-border: #fde68a;
+  --cyan: #0e7490;
+  --cyan-bg: #ecfeff;
+  --cyan-border: #a5f3fc;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  --radius: 10px;
+  --radius-lg: 14px;
+}
+[data-theme="dark"] {
+  --bg: #0f0e0d;
+  --surface: #1c1b19;
+  --surface2: #252422;
+  --border: #2e2c28;
+  --border2: #3d3b36;
+  --text: #f0ede8;
+  --text2: #9b9890;
+  --text3: #6b6860;
+  --accent: #818cf8;
+  --accent-bg: #1e1b4b;
+  --accent-border: #3730a3;
+  --green: #4ade80;
+  --green-bg: #052e16;
+  --green-border: #166534;
+  --red: #f87171;
+  --red-bg: #2d0a0a;
+  --red-border: #991b1b;
+  --amber: #fbbf24;
+  --amber-bg: #2d1f00;
+  --amber-border: #92400e;
+  --cyan: #22d3ee;
+  --cyan-bg: #0a2930;
+  --cyan-border: #164e63;
+  --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+mono { font-family: 'JetBrains Mono', monospace; }
+
+/* Layout */
+.app { display: grid; grid-template-columns: 380px 1fr; min-height: 100vh; }
+.sidebar { background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; }
+.main { background: var(--bg); overflow-y: auto; }
+
+/* Header */
+.header { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); }
+.header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+.app-name { font-size: 17px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+.app-name span { color: var(--accent); }
+.theme-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: background 0.15s; }
+.theme-btn:hover { background: var(--border); }
+.app-sub { font-size: 11px; color: var(--text3); font-weight: 500; letter-spacing: 0.2px; }
+
+/* Mode Tabs */
+.mode-tabs { display: flex; gap: 2px; padding: 12px 24px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.tab { flex: 1; padding: 7px 4px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--text2); font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.tab.active { background: var(--accent-bg); border-color: var(--accent-border); color: var(--accent); }
+.tab:hover:not(.active) { background: var(--surface); }
+
+/* Form sections */
+.form-body { flex: 1; padding: 16px 24px; display: flex; flex-direction: column; gap: 14px; }
+.section-title { font-size: 10px; font-weight: 700; color: var(--text3); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
+.field-group { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.field { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-bottom: 1px solid var(--border); }
+.field:last-child { border-bottom: none; }
+.field:focus-within { background: var(--accent-bg); }
+.field-icon { width: 28px; height: 28px; border-radius: 7px; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.field-body { flex: 1; min-width: 0; }
+.field-label { font-size: 9.5px; font-weight: 700; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px; }
+.field-inp { display: flex; align-items: center; gap: 4px; }
+.field-pfx { font-size: 14px; font-weight: 600; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
+.field-inp input[type="number"] { border: none; outline: none; background: transparent; color: var(--text); font-size: 17px; font-weight: 600; font-family: 'JetBrains Mono', monospace; width: 100%; }
+.field-inp input::placeholder { color: var(--text3); }
+.field-inp input:focus { color: var(--accent); }
+
+/* Slider field */
+.slider-field { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.slider-field:last-child { border-bottom: none; }
+.slider-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.slider-lbl { font-size: 9.5px; font-weight: 700; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; }
+.slider-val { font-size: 13px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--amber); background: var(--amber-bg); padding: 2px 8px; border-radius: 5px; border: 1px solid var(--amber-border); }
+input[type="range"] { width: 100%; height: 4px; border-radius: 2px; background: var(--border2); outline: none; -webkit-appearance: none; cursor: pointer; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--surface); box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+
+/* RR stepper */
+.rr-field { display: flex; align-items: center; gap: 10px; padding: 11px 14px; }
+.rr-icon { width: 28px; height: 28px; border-radius: 7px; background: var(--surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.rr-body { flex: 1; }
+.rr-lbl { font-size: 9.5px; font-weight: 700; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }
+.rr-controls { display: flex; align-items: center; gap: 8px; }
+.rr-btn { width: 28px; height: 28px; border-radius: 7px; border: 1px solid var(--border2); background: var(--surface); color: var(--text); font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.12s; }
+.rr-btn:hover { background: var(--accent-bg); border-color: var(--accent-border); color: var(--accent); }
+.rr-btn:active { transform: scale(0.92); }
+.rr-val { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--accent); min-width: 50px; text-align: center; }
+
+/* Calc button */
+.calc-wrap { padding: 0 24px 20px; }
+.calc-btn { width: 100%; padding: 13px; background: var(--accent); border: none; border-radius: var(--radius-lg); color: #fff; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; letter-spacing: 0.2px; transition: all 0.15s; }
+.calc-btn:hover { opacity: 0.92; }
+.calc-btn:active { transform: scale(0.98); }
+
+/* Main panel */
+.main-inner { padding: 24px 28px; }
+.main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.main-title { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+.main-badge { font-size: 11px; font-weight: 600; color: var(--text3); background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; font-family: 'JetBrains Mono', monospace; }
+
+/* Empty state */
+.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 10px; }
+.empty-icon { font-size: 42px; opacity: 0.3; }
+.empty-title { font-size: 15px; font-weight: 600; color: var(--text2); }
+.empty-sub { font-size: 12px; color: var(--text3); }
+
+/* Results */
+.results { display: none; flex-direction: column; gap: 14px; }
+.results.show { display: flex; }
+
+/* Hero cards */
+.hero-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.hero-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 18px; }
+.hero-card.accent { background: var(--accent-bg); border-color: var(--accent-border); }
+.hero-card.green { background: var(--green-bg); border-color: var(--green-border); }
+.hc-label { font-size: 10px; font-weight: 700; color: var(--text3); letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 4px; }
+.hc-label.acc { color: var(--accent); }
+.hc-label.grn { color: var(--green); }
+.hc-value { font-size: 28px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--text); line-height: 1.1; }
+.hc-value.acc { color: var(--accent); }
+.hc-value.grn { color: var(--green); }
+.hc-sub { font-size: 11px; color: var(--text3); margin-top: 3px; font-family: 'JetBrains Mono', monospace; }
+
+/* Stat grid */
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+.sc-lbl { font-size: 9.5px; font-weight: 700; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+.sc-val { font-size: 18px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+.sc-val.red { color: var(--red); }
+.sc-val.green { color: var(--green); }
+.sc-val.amber { color: var(--amber); }
+.sc-val.cyan { color: var(--cyan); }
+
+/* Trade plan table */
+.trade-plan { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.tp-header { padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.tp-title { font-size: 11px; font-weight: 700; color: var(--text2); letter-spacing: 0.5px; text-transform: uppercase; }
+.tp-row { display: grid; grid-template-columns: 28px 1fr 1fr 1fr; gap: 0; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.tp-row:last-child { border-bottom: none; }
+.tp-row:hover { background: var(--surface2); }
+.tp-dot { width: 9px; height: 9px; border-radius: 50%; }
+.tp-name { font-size: 13px; font-weight: 500; color: var(--text2); }
+.tp-price { font-size: 14px; font-weight: 700; font-family: 'JetBrains Mono', monospace; text-align: right; }
+.tp-note { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--text3); text-align: right; }
+
+/* RR + meter row */
+.bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.rr-summary { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 18px; }
+.rrs-title { font-size: 11px; font-weight: 700; color: var(--text2); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 12px; }
+.rrs-nums { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.rrs-num { flex: 1; text-align: center; }
+.rrs-num-lbl { font-size: 10px; color: var(--text3); font-weight: 600; margin-bottom: 2px; }
+.rrs-num-val { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+.rrs-divider { color: var(--border2); font-size: 22px; font-weight: 300; }
+.rrs-extra { display: flex; justify-content: space-between; font-size: 11px; color: var(--text3); font-family: 'JetBrains Mono', monospace; border-top: 1px solid var(--border); padding-top: 8px; }
+
+.risk-meter-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 18px; }
+.rm-title { font-size: 11px; font-weight: 700; color: var(--text2); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px; }
+.rm-track { height: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
+.rm-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+.rm-ticks { display: flex; justify-content: space-between; font-size: 9.5px; color: var(--text3); font-family: 'JetBrains Mono', monospace; margin-bottom: 10px; }
+.rm-status { font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 7px; text-align: center; }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="header">
+      <div class="header-top">
+        <div class="app-name">Position<span>Sizer</span> <span style="font-weight:400;font-size:12px;color:var(--text3)">PRO</span></div>
+        <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle theme">☀️</button>
+      </div>
+      <div class="app-sub">Candle-based · Auto STT · RR-driven</div>
+    </div>
+
+    <div class="mode-tabs">
+      <button class="tab active" onclick="setMode('basic',this)">Basic</button>
+      <button class="tab" onclick="setMode('candle',this)">Candle SL</button>
+      <button class="tab" onclick="setMode('advanced',this)">Advanced</button>
+    </div>
+
+    <div class="form-body">
+
+      <!-- Trade Setup -->
+      <div>
+        <div class="section-title">Trade Setup</div>
+        <div class="field-group">
+          <div class="field">
+            <div class="field-icon">📈</div>
+            <div class="field-body">
+              <div class="field-label">Candle High</div>
+              <div class="field-inp"><span class="field-pfx">₹</span><input type="number" id="f-high" placeholder="1540.00" inputmode="decimal"></div>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-icon">📉</div>
+            <div class="field-body">
+              <div class="field-label">Swing Low</div>
+              <div class="field-inp"><span class="field-pfx">₹</span><input type="number" id="f-swinglow" placeholder="1460.00" inputmode="decimal"></div>
+            </div>
+          </div>
+          <div class="field hidden" id="fld-low">
+            <div class="field-icon">🛑</div>
+            <div class="field-body">
+              <div class="field-label">Candle Low (SL base)</div>
+              <div class="field-inp"><span class="field-pfx">₹</span><input type="number" id="f-low" placeholder="1452.00" inputmode="decimal"></div>
+            </div>
+          </div>
+          <div class="slider-field">
+            <div class="slider-top">
+              <span class="slider-lbl" id="sl-lbl-text">SL Buffer below Swing Low</span>
+              <span class="slider-val" id="sl-pct-display">0.50%</span>
+            </div>
+            <input type="range" id="sl-slider" min="0.1" max="2" step="0.1" value="0.5"
+              oninput="document.getElementById('sl-pct-display').textContent=parseFloat(this.value).toFixed(2)+'%'">
+          </div>
+          <div class="rr-field">
+            <div class="rr-icon">⚖️</div>
+            <div class="rr-body">
+              <div class="rr-lbl">Risk : Reward Ratio</div>
+              <div class="rr-controls">
+                <button class="rr-btn" onclick="changeRR(-0.5)">−</button>
+                <div class="rr-val" id="rr-display">3.0</div>
+                <button class="rr-btn" onclick="changeRR(0.5)">+</button>
+              </div>
+            </div>
+          </div>
+          <div class="field hidden" id="fld-lot">
+            <div class="field-icon">📦</div>
+            <div class="field-body">
+              <div class="field-label">Lot Size Constraint (optional)</div>
+              <div class="field-inp"><input type="number" id="f-lotsize" placeholder="e.g. 75" inputmode="decimal"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Risk -->
+      <div>
+        <div class="section-title">Risk per Trade</div>
+        <div class="field-group">
+          <div class="field">
+            <div class="field-icon">🎯</div>
+            <div class="field-body">
+              <div class="field-label">Risk Amount (₹)</div>
+              <div class="field-inp"><span class="field-pfx">₹</span><input type="number" id="f-risk" value="300" inputmode="decimal"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /form-body -->
+
+    <div class="calc-wrap">
+      <button class="calc-btn" onclick="calculate()">⚡ Calculate Position</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="main-inner">
+      <div class="main-header">
+        <div class="main-title">Position Analysis</div>
+        <div class="main-badge" id="mode-badge">BASIC MODE</div>
+      </div>
+
+      <div class="empty" id="empty-state">
+        <div class="empty-icon">📊</div>
+        <div class="empty-title">No trade computed yet</div>
+        <div class="empty-sub">Fill in the form and hit Calculate</div>
+      </div>
+
+      <div class="results" id="results">
+
+        <!-- Hero row -->
+        <div class="hero-row">
+          <div class="hero-card accent">
+            <div class="hc-label acc">Entry Price (Midpoint)</div>
+            <div class="hc-value acc" id="r-entry">—</div>
+            <div class="hc-sub" id="r-entry-sub">SL + (High − SL) / 2</div>
+          </div>
+          <div class="hero-card green">
+            <div class="hc-label grn">Capital Required</div>
+            <div class="hc-value grn" id="r-capital">—</div>
+            <div class="hc-sub" id="r-capital-sub">incl. STT</div>
+          </div>
+        </div>
+
+        <!-- Stat grid -->
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="sc-lbl">Qty / Shares</div>
+            <div class="sc-val" style="color:var(--accent)" id="r-shares">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-lbl">Risk ₹</div>
+            <div class="sc-val red" id="r-risk-inr">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-lbl">Profit ₹</div>
+            <div class="sc-val green" id="r-profit">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-lbl">STT (₹)</div>
+            <div class="sc-val cyan" id="r-stt">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-lbl">SL Distance %</div>
+            <div class="sc-val amber" id="r-sl-dist-pct">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-lbl">Min Win Rate</div>
+            <div class="sc-val amber" id="r-winrate">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-lbl">Risk % of Position</div>
+            <div class="sc-val red" id="r-risk-pct">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-lbl">Position Value</div>
+            <div class="sc-val" style="color:var(--text)" id="r-pos-val">—</div>
+          </div>
+        </div>
+
+        <!-- Trade plan -->
+        <div class="trade-plan">
+          <div class="tp-header">
+            <div class="tp-title">📋 Trade Plan</div>
+          </div>
+          <div class="tp-row">
+            <div class="tp-dot" style="background:#9ca3af"></div>
+            <div class="tp-name">Swing Low</div>
+            <div class="tp-price" style="color:var(--text3)" id="r-swinglow">—</div>
+            <div class="tp-note">reference level</div>
+          </div>
+          <div class="tp-row">
+            <div class="tp-dot" style="background:var(--amber)"></div>
+            <div class="tp-name">Candle High</div>
+            <div class="tp-price" style="color:var(--amber)" id="r-high">—</div>
+            <div class="tp-note">resistance / breakout</div>
+          </div>
+          <div class="tp-row">
+            <div class="tp-dot" style="background:var(--accent)"></div>
+            <div class="tp-name">Entry</div>
+            <div class="tp-price" style="color:var(--accent)" id="r-entry2">—</div>
+            <div class="tp-note" id="r-entry-note">midpoint formula</div>
+          </div>
+          <div class="tp-row">
+            <div class="tp-dot" style="background:var(--red)"></div>
+            <div class="tp-name">Stop Loss</div>
+            <div class="tp-price" style="color:var(--red)" id="r-sl">—</div>
+            <div class="tp-note" id="r-sl-note">—</div>
+          </div>
+          <div class="tp-row">
+            <div class="tp-dot" style="background:var(--green)"></div>
+            <div class="tp-name">Target (TP)</div>
+            <div class="tp-price" style="color:var(--green)" id="r-tp">—</div>
+            <div class="tp-note" id="r-tp-note">—</div>
+          </div>
+        </div>
+
+        <!-- Bottom row: RR summary + Risk meter -->
+        <div class="bottom-row">
+          <div class="rr-summary">
+            <div class="rrs-title">Risk / Reward Summary</div>
+            <div class="rrs-nums">
+              <div class="rrs-num">
+                <div class="rrs-num-lbl">Risk</div>
+                <div class="rrs-num-val" style="color:var(--red)">1</div>
+              </div>
+              <div class="rrs-divider">:</div>
+              <div class="rrs-num">
+                <div class="rrs-num-lbl">Reward</div>
+                <div class="rrs-num-val" style="color:var(--green)" id="r-rr-val">—</div>
+              </div>
+            </div>
+            <div class="rrs-extra">
+              <span>SL dist: <span id="r-sl-dist-abs">—</span></span>
+              <span>TP dist: <span id="r-tp-dist-abs">—</span></span>
+              <span>Break-even: <span id="r-be">—</span></span>
+            </div>
+          </div>
+
+          <div class="risk-meter-card">
+            <div class="rm-title">Risk Meter (% of Position)</div>
+            <div class="rm-track"><div class="rm-fill" id="rm-fill" style="width:0%"></div></div>
+            <div class="rm-ticks"><span>0%</span><span>2%</span><span>5%</span><span>8%</span><span>10%+</span></div>
+            <div class="rm-status" id="rm-status" style="background:var(--surface2);color:var(--text3)">—</div>
+          </div>
+        </div>
+
+      </div><!-- /results -->
+    </div>
+  </main>
+</div>
+
+<script>
+let mode = 'basic';
+let rrVal = 3.0;
+let isDark = true;
+document.documentElement.setAttribute('data-theme','dark');
+document.getElementById('theme-btn').textContent = '☀️';
+
+function toggleTheme() {
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  document.getElementById('theme-btn').textContent = isDark ? '☀️' : '🌙';
+}
+
+function setMode(m, btn) {
+  mode = m;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  const badges = { basic: 'BASIC MODE', candle: 'CANDLE SL MODE', advanced: 'ADVANCED MODE' };
+  document.getElementById('mode-badge').textContent = badges[m];
+  document.getElementById('fld-low').classList.toggle('hidden', m === 'basic');
+  document.getElementById('fld-lot').classList.toggle('hidden', m !== 'advanced');
+  const lbl = document.getElementById('sl-lbl-text');
+  lbl.textContent = m === 'basic' ? 'SL Buffer below Swing Low' : 'SL Buffer below Candle Low';
+}
+
+function changeRR(d) {
+  rrVal = Math.max(0.5, Math.round((rrVal + d) * 10) / 10);
+  document.getElementById('rr-display').textContent = rrVal.toFixed(1);
+}
+
+const gV = id => parseFloat(document.getElementById(id).value) || 0;
+const inr = (n, d=2) => '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: d, maximumFractionDigits: d });
+const pct = (n, d=2) => n.toFixed(d) + '%';
+
+function calculate() {
+  const high     = gV('f-high');
+  const swingLow = gV('f-swinglow');
+  const risk     = gV('f-risk') || 300;
+  const slPct    = parseFloat(document.getElementById('sl-slider').value);
+
+  if (!high || !swingLow) { alert('Enter Candle High and Swing Low.'); return; }
+  if (high <= swingLow)    { alert('Candle High must be above Swing Low.'); return; }
+  if (!risk)               { alert('Enter a Risk Amount.'); return; }
+
+  const entry = swingLow + (high - swingLow) / 2;
+
+  let slBase = swingLow;
+  if (mode !== 'basic') {
+    const cLow = gV('f-low');
+    if (cLow > 0) slBase = cLow;
+  }
+  const sl = slBase * (1 - slPct / 100);
+
+  if (entry <= sl) { alert('Entry ≤ Stop Loss — check your inputs.'); return; }
+
+  const slDist    = entry - sl;
+  const slDistPct = (slDist / entry) * 100;
+
+  let qty = Math.floor(risk / slDist);
+  if (qty < 1) qty = 1;
+
+  if (mode === 'advanced') {
+    const lot = gV('f-lotsize');
+    if (lot > 1) {
+      qty = Math.floor(qty / lot) * lot;
+      if (qty < lot) qty = lot;
+    }
+  }
+
+  const posVal     = qty * entry;
+  const stt        = posVal * 2 * 0.001;
+  const capital    = posVal + stt;
+  const actualRisk = qty * slDist;
+  const riskPct    = (actualRisk / posVal) * 100;
+  const tp         = entry + slDist * rrVal;
+  const tpDist     = tp - entry;
+  const profit     = qty * tpDist;
+  const rrActual   = profit / actualRisk;
+  const breakEven  = (1 / (1 + rrActual)) * 100;
+
+  // Populate
+  document.getElementById('r-entry').textContent       = inr(entry);
+  document.getElementById('r-entry2').textContent      = inr(entry);
+  document.getElementById('r-entry-sub').textContent   = 'SL + (High − SL) / 2';
+  document.getElementById('r-entry-note').textContent  = 'midpoint formula';
+
+  document.getElementById('r-capital').textContent     = inr(capital, 0);
+  document.getElementById('r-capital-sub').textContent = 'Position ' + inr(posVal, 0) + ' + STT ' + inr(stt, 2);
+
+  document.getElementById('r-shares').textContent      = qty.toLocaleString('en-IN');
+  document.getElementById('r-risk-inr').textContent    = inr(actualRisk, 0);
+  document.getElementById('r-profit').textContent      = inr(profit, 0);
+  document.getElementById('r-stt').textContent         = inr(stt, 2);
+  document.getElementById('r-sl-dist-pct').textContent = pct(slDistPct);
+  document.getElementById('r-winrate').textContent     = pct(breakEven, 1);
+  document.getElementById('r-risk-pct').textContent    = pct(riskPct);
+  document.getElementById('r-pos-val').textContent     = inr(posVal, 0);
+
+  document.getElementById('r-swinglow').textContent    = inr(swingLow);
+  document.getElementById('r-high').textContent        = inr(high);
+  document.getElementById('r-sl').textContent          = inr(sl);
+  document.getElementById('r-sl-note').textContent     = '↓ ' + inr(slDist) + ' (' + pct(slDistPct) + ')';
+  document.getElementById('r-tp').textContent          = inr(tp);
+  document.getElementById('r-tp-note').textContent     = '↑ ' + inr(tpDist) + ' (RR ' + rrVal.toFixed(1) + 'x)';
+
+  document.getElementById('r-rr-val').textContent      = rrActual.toFixed(2);
+  document.getElementById('r-sl-dist-abs').textContent = inr(slDist);
+  document.getElementById('r-tp-dist-abs').textContent = inr(tpDist);
+  document.getElementById('r-be').textContent          = pct(breakEven, 1);
+
+  const meterPct = Math.min((riskPct / 10) * 100, 100);
+  const fill = document.getElementById('rm-fill');
+  fill.style.width = meterPct + '%';
+  let color, bg, statusText;
+  if      (riskPct <= 2)  { color = '#16a34a'; bg = '#f0fdf4'; statusText = '✓ Tight SL — capital efficient'; }
+  else if (riskPct <= 4)  { color = '#b45309'; bg = '#fffbeb'; statusText = '⚡ Moderate risk within position'; }
+  else if (riskPct <= 7)  { color = '#ea580c'; bg = '#fff7ed'; statusText = '⚠ Wide SL — consider smaller qty'; }
+  else                     { color = '#dc2626'; bg = '#fef2f2'; statusText = '✗ Very wide SL — high capital at risk'; }
+  fill.style.background = color;
+  const st = document.getElementById('rm-status');
+  st.textContent = statusText;
+  st.style.background = isDark ? color + '22' : bg;
+  st.style.color = color;
+
+  document.getElementById('empty-state').style.display = 'none';
+  const res = document.getElementById('results');
+  res.classList.add('show');
+}
+</script>
+</body>
+</html>
